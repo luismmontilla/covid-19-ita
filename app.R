@@ -1,7 +1,7 @@
 library(shiny)
 library(dplyr)
 library(ggplot2)
-#library(readr)
+
 
 urlfile<-"https://raw.githubusercontent.com/pcm-dpc/COVID-19/master/dati-regioni/dpc-covid19-ita-regioni.csv"
 
@@ -23,7 +23,14 @@ ui <- fluidPage(
 
         # Show a plot of the generated distribution
         mainPanel(
-           plotOutput("distPlot")
+           plotOutput("distPlot"),
+           p("All the data displayed in this visualization is provided by the 
+             Italian Ministry of Health (Ministero della Salute) and elaborated 
+             by Dipartimento della Protezione Civile. This work is therefore a 
+             derivative of ",
+             a("COVID-19 Italia - Monitoraggio situazione",
+               href="https://github.com/pcm-dpc/COVID-19"),
+             "licensed under CC BY 4.0")
         )
     )
 )
@@ -39,6 +46,10 @@ server <- function(input, output) {
             geom_vline(xintercept = as.POSIXct(as.Date("2020-03-09")), 
                        linetype="dashed", 
                        color = "black") +
+            annotate("text", 
+                     x = as.POSIXct(as.Date("2020-03-07")), 
+                     y = max(df[df$denominazione_regione==input$regionInput,"nuovi_attualmente_positivi"]), 
+                     label = "Announcement of lockdown") +
             labs(x = "Date",
                  y = "New cases")
     })
