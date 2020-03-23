@@ -67,7 +67,8 @@ server <- function(input, output) {
                                linetype="dashed", 
                                color = "black") +
                     labs(x = "Date",
-                         y = "New cases") +
+                         y = "New cases",
+                         title = paste(input$regionInput)) +
                     ylim(0, max(nation$nuovi_attualmente_positivi))
                 
                 q <- nation %>% 
@@ -75,7 +76,8 @@ server <- function(input, output) {
                     geom_point() +
                     geom_smooth() +
                     labs(x = "Date",
-                         y = "") +
+                         y = "",
+                         title = "Italy") +
                     geom_vline(xintercept = as.POSIXct(as.Date("2020-03-09")), 
                                linetype="dashed", 
                                color = "black")
@@ -90,14 +92,16 @@ server <- function(input, output) {
                                linetype="dashed", 
                                color = "black") +
                     labs(x = "Date",
-                         y = "New cases") +
+                         y = "New cases",
+                         title = paste(input$regionInput)) +
                     ylim(0, max(nation$nuovi_attualmente_positivi))
                 
                 q <- nation %>% 
                     ggplot(aes(x = data, y = nuovi_attualmente_positivi)) +
                     geom_point() +
                     labs(x = "Date",
-                         y = "") +
+                         y = "",
+                         title = "Italy") +
                     geom_vline(xintercept = as.POSIXct(as.Date("2020-03-09")), 
                                linetype="dashed", 
                                color = "black")
