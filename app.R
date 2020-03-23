@@ -1,6 +1,7 @@
 library(shiny)
 library(dplyr)
 library(ggplot2)
+library(patchwork)
 
 #data
 url_a <- "https://raw.githubusercontent.com/pcm-dpc/COVID-19/master/dati-regioni/dpc-covid19-ita-regioni.csv"
@@ -25,7 +26,10 @@ ui <- fluidPage(
             selectInput("regionInput", "Region",
                         choices = levels(region$denominazione_regione)),
             checkboxInput("nationInput", 
-                          label = "Show national trend", 
+                          label = "Show national data", 
+                          value = FALSE),
+            checkboxInput("trendInput", 
+                          label = "Show data trend", 
                           value = FALSE),
             p("All the data displayed in this visualization is provided by the 
              Italian Ministry of Health (Ministero della Salute) and elaborated 
@@ -52,37 +56,89 @@ server <- function(input, output) {
 
     output$distPlot <- renderPlot({
         if(input$nationInput == TRUE){
+            if(input$trendInput == TRUE) {
+                
+                p <- region %>%
+                    filter(denominazione_regione==input$regionInput) %>% 
+                    ggplot(aes(x = data, y = nuovi_attualmente_positivi)) +
+                    geom_point() +
+                    geom_smooth() +
+                    geom_vline(xintercept = as.POSIXct(as.Date("2020-03-09")), 
+                               linetype="dashed", 
+                               color = "black") +
+                    labs(x = "Date",
+                         y = "New cases") +
+                    ylim(0, max(nation$nuovi_attualmente_positivi))
+                
+                q <- nation %>% 
+                    ggplot(aes(x = data, y = nuovi_attualmente_positivi)) +
+                    geom_point() +
+                    geom_smooth() +
+                    labs(x = "Date",
+                         y = "") +
+                    geom_vline(xintercept = as.POSIXct(as.Date("2020-03-09")), 
+                               linetype="dashed", 
+                               color = "black")
+                
+                p+q
+            } else {
+                p <- region %>%
+                    filter(denominazione_regione==input$regionInput) %>% 
+                    ggplot(aes(x = data, y = nuovi_attualmente_positivi)) +
+                    geom_point() +
+                    geom_vline(xintercept = as.POSIXct(as.Date("2020-03-09")), 
+                               linetype="dashed", 
+                               color = "black") +
+                    labs(x = "Date",
+                         y = "New cases") +
+                    ylim(0, max(nation$nuovi_attualmente_positivi))
+                
+                q <- nation %>% 
+                    ggplot(aes(x = data, y = nuovi_attualmente_positivi)) +
+                    geom_point() +
+                    labs(x = "Date",
+                         y = "") +
+                    geom_vline(xintercept = as.POSIXct(as.Date("2020-03-09")), 
+                               linetype="dashed", 
+                               color = "black")
+                
+                p+q
+            }
         
-            p <- region %>%
-                filter(denominazione_regione==input$regionInput) %>% 
-                ggplot(aes(x = data, y = nuovi_attualmente_positivi)) +
-                geom_point() +
-                geom_vline(xintercept = as.POSIXct(as.Date("2020-03-09")), 
-                           linetype="dashed", 
-                           color = "black") +
-                labs(x = "Date",
-                     y = "New cases")
             
-            p + geom_line(aes(x = nation$data,
-                              y = nation$nuovi_attualmente_positivi)) +
-                annotate("text", 
-                         x = as.POSIXct(as.Date("2020-03-07")), 
-                         y = max(nation$nuovi_attualmente_positivi), 
-                         label = "Announcement of lockdown")
+
         } else {
-            region %>%
-                filter(denominazione_regione==input$regionInput) %>% 
-                ggplot(aes(x = data, y = nuovi_attualmente_positivi)) +
-                geom_point() +
-                geom_vline(xintercept = as.POSIXct(as.Date("2020-03-09")), 
-                           linetype="dashed", 
-                           color = "black") +
-                annotate("text", 
-                         x = as.POSIXct(as.Date("2020-03-07")), 
-                         y = max(region[region$denominazione_regione==input$regionInput,"nuovi_attualmente_positivi"]), 
-                         label = "Announcement of lockdown") +
-                labs(x = "Date",
-                     y = "New cases")
+            if(input$trendInput == TRUE) {
+                region %>%
+                    filter(denominazione_regione==input$regionInput) %>% 
+                    ggplot(aes(x = data, y = nuovi_attualmente_positivi)) +
+                    geom_point() +
+                    geom_smooth() +
+                    geom_vline(xintercept = as.POSIXct(as.Date("2020-03-09")), 
+                               linetype="dashed", 
+                               color = "black") +
+                    annotate("text", 
+                             x = as.POSIXct(as.Date("2020-03-07")), 
+                             y = max(region[region$denominazione_regione==input$regionInput,"nuovi_attualmente_positivi"]), 
+                             label = "Announcement of lockdown") +
+                    labs(x = "Date",
+                         y = "New cases")
+            } else {
+                region %>%
+                    filter(denominazione_regione==input$regionInput) %>% 
+                    ggplot(aes(x = data, y = nuovi_attualmente_positivi)) +
+                    geom_point() +
+                    geom_vline(xintercept = as.POSIXct(as.Date("2020-03-09")), 
+                               linetype="dashed", 
+                               color = "black") +
+                    annotate("text", 
+                             x = as.POSIXct(as.Date("2020-03-07")), 
+                             y = max(region[region$denominazione_regione==input$regionInput,"nuovi_attualmente_positivi"]), 
+                             label = "Announcement of lockdown") +
+                    labs(x = "Date",
+                         y = "New cases")
+            }
+            
         }
         
         
