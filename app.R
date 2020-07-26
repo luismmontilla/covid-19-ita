@@ -16,15 +16,16 @@ nation$data <- as.POSIXct(sub(" .*", "", nation$data))
 
 # Define UI for application that draws a histogram
 ui <- fluidPage(
-
+    
     # Application title
     titlePanel("COVID-19: Number of new cases in Italy"),
-
+    
     # Sidebar with a slider input for number of bins 
     sidebarLayout(
         sidebarPanel(
-            selectInput("regionInput", "Region",
-                        choices = levels(region$denominazione_regione)),
+            selectInput("regionInput", 
+                        "Region",
+                        choices = unique(region$denominazione_regione)),
             checkboxInput("nationInput", 
                           label = "Show national data", 
                           value = FALSE),
@@ -39,104 +40,133 @@ ui <- fluidPage(
                 href = "https://github.com/pcm-dpc/COVID-19"),
               "licensed under CC BY 4.0")
         ),
-
+        
         # Show a plot of the generated distribution
         mainPanel(
-           plotOutput("distPlot"),
-           p("Code available ",
-             a("here",
-               href = "https://github.com/luismmontilla/covid-19-ita"),
-             align = "center")
+            plotOutput("distPlot"),
+            p("Code available ",
+              a("here",
+                href = "https://github.com/luismmontilla/covid-19-ita"),
+              align = "center")
         )
     )
 )
 
 # Define server logic required to draw a histogram
 server <- function(input, output) {
-
+    
     output$distPlot <- renderPlot({
+        
+        
+        #regional plot
+        p <- region %>%
+            filter(denominazione_regione==input$regionInput) %>% 
+            filter(nuovi_positivi >= 0) %>% 
+            ggplot(aes(x = data, y = nuovi_positivi)) +
+            geom_point() + 
+            geom_vline(xintercept = as.POSIXct(as.Date("2020-03-09")),
+                       linetype = "dashed",
+                       color = "black") +
+            geom_vline(xintercept = as.POSIXct(as.Date("2020-05-04")),
+                       linetype = "dashed",
+                       color = "black") +
+            labs(x = "Date",
+                 y = "New cases")
+        
+        #national plot
+        q <- nation %>% 
+            filter(nuovi_positivi >= 0) %>% 
+            ggplot(aes(x = data, y = nuovi_positivi)) +
+            geom_point() +
+            labs(x = "Date",
+                 y = "") +
+            geom_vline(xintercept = as.POSIXct(as.Date("2020-03-09")), 
+                       linetype="dashed", 
+                       color = "black") +
+            geom_vline(xintercept = as.POSIXct(as.Date("2020-05-04")),
+                       linetype = "dashed",
+                       color = "black")
+        
+        
         if(input$nationInput == TRUE){
             if(input$trendInput == TRUE) {
                 
-                p <- region %>%
-                    filter(denominazione_regione==input$regionInput) %>% 
-                    ggplot(aes(x = data, y = nuovi_positivi)) +
-                    geom_point() +
+                p = p +
+                    ylim(0, max(nation$nuovi_positivi)) +
                     geom_smooth() +
-                    geom_vline(xintercept = as.POSIXct(as.Date("2020-03-09")), 
-                               linetype="dashed", 
-                               color = "black") +
-                    labs(x = "Date",
-                         y = "New cases") +
-                    ylim(0, max(nation$nuovi_positivi))
+                    annotate("text",
+                             x = as.POSIXct(as.Date("2020-03-07")),
+                             y = max(nation$nuovi_positivi),
+                             label = "A") +
+                    annotate("text",
+                             x = as.POSIXct(as.Date("2020-05-02")),
+                             y = max(nation$nuovi_positivi),
+                             label = "B")
                 
-                q <- nation %>% 
-                    ggplot(aes(x = data, y = nuovi_positivi)) +
-                    geom_point() +
-                    geom_smooth() +
-                    labs(x = "Date",
-                         y = "") +
-                    geom_vline(xintercept = as.POSIXct(as.Date("2020-03-09")), 
-                               linetype="dashed", 
-                               color = "black")
+                
+                q = q +
+                    annotate("text",
+                             x = as.POSIXct(as.Date("2020-03-07")),
+                             y = max(nation$nuovi_positivi),
+                             label = "A") +
+                    annotate("text",
+                             x = as.POSIXct(as.Date("2020-05-02")),
+                             y = max(nation$nuovi_positivi),
+                             label = "B") +
+                    geom_smooth()
                 
                 p+q
-            } else {
-                p <- region %>%
-                    filter(denominazione_regione==input$regionInput) %>% 
-                    ggplot(aes(x = data, y = nuovi_positivi)) +
-                    geom_point() +
-                    geom_vline(xintercept = as.POSIXct(as.Date("2020-03-09")), 
-                               linetype="dashed", 
-                               color = "black") +
-                    labs(x = "Date",
-                         y = "New cases") +
-                    ylim(0, max(nation$nuovi_positivi))
                 
-                q <- nation %>% 
-                    ggplot(aes(x = data, y = nuovi_positivi)) +
-                    geom_point() +
-                    labs(x = "Date",
-                         y = "") +
-                    geom_vline(xintercept = as.POSIXct(as.Date("2020-03-09")), 
-                               linetype="dashed", 
-                               color = "black")
+            } else {
+                
+                p = p +
+                    annotate("text",
+                                x = as.POSIXct(as.Date("2020-03-07")),
+                                y = max(nation$nuovi_positivi),
+                                label = "A") +
+                    ylim(0, max(nation$nuovi_positivi)) +
+                    annotate("text",
+                             x = as.POSIXct(as.Date("2020-05-02")),
+                             y = max(nation$nuovi_positivi),
+                             label = "B")
+                
+                q = q +
+                    annotate("text",
+                             x = as.POSIXct(as.Date("2020-03-07")),
+                             y = max(nation$nuovi_positivi),
+                             label = "A") +
+                    annotate("text",
+                             x = as.POSIXct(as.Date("2020-05-02")),
+                             y = max(nation$nuovi_positivi),
+                             label = "B")
                 
                 p+q
             }
-        
             
-
         } else {
             if(input$trendInput == TRUE) {
-                region %>%
-                    filter(denominazione_regione==input$regionInput) %>% 
-                    ggplot(aes(x = data, y = nuovi_positivi)) +
-                    geom_point() +
+                p +
                     geom_smooth() +
-                    geom_vline(xintercept = as.POSIXct(as.Date("2020-03-09")), 
-                               linetype="dashed", 
-                               color = "black") +
-                    annotate("text", 
-                             x = as.POSIXct(as.Date("2020-03-07")), 
-                             y = max(region[region$denominazione_regione==input$regionInput,"nuovi_positivi"]), 
-                             label = "Announcement of lockdown") +
-                    labs(x = "Date",
-                         y = "New cases")
+                annotate("text",
+                         x = as.POSIXct(as.Date("2020-03-07")),
+                         y = max(region[region$denominazione_regione==input$regionInput,"nuovi_positivi"]),
+                         label = "A") +
+                    annotate("text",
+                             x = as.POSIXct(as.Date("2020-05-02")),
+                             y = max(region[region$denominazione_regione==input$regionInput,"nuovi_positivi"]),
+                             label = "B")
+                
             } else {
-                region %>%
-                    filter(denominazione_regione==input$regionInput) %>% 
-                    ggplot(aes(x = data, y = nuovi_positivi)) +
-                    geom_point() +
-                    geom_vline(xintercept = as.POSIXct(as.Date("2020-03-09")), 
-                               linetype="dashed", 
-                               color = "black") +
-                    annotate("text", 
-                             x = as.POSIXct(as.Date("2020-03-07")), 
-                             y = max(region[region$denominazione_regione==input$regionInput,"nuovi_positivi"]), 
-                             label = "Announcement of lockdown") +
-                    labs(x = "Date",
-                         y = "New cases")
+                p +
+                    annotate("text",
+                             x = as.POSIXct(as.Date("2020-03-07")),
+                             y = max(region[region$denominazione_regione==input$regionInput,"nuovi_positivi"]),
+                             label = "A") +
+                    annotate("text",
+                             x = as.POSIXct(as.Date("2020-05-02")),
+                             y = max(region[region$denominazione_regione==input$regionInput,"nuovi_positivi"]),
+                             label = "B")
+                
             }
             
         }
