@@ -44,6 +44,8 @@ ui <- fluidPage(
         # Show a plot of the generated distribution
         mainPanel(
             plotOutput("distPlot"),
+            p("A: Begining of the lockdown. B: Beginning of the Phase 2.",
+              align = "center"),
             p("Code available ",
               a("here",
                 href = "https://github.com/luismmontilla/covid-19-ita"),
