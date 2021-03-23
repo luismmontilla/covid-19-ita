@@ -13,6 +13,10 @@ region$data <- as.POSIXct(sub(" .*", "", region$data))
 url_b <- "https://raw.githubusercontent.com/pcm-dpc/COVID-19/master/dati-andamento-nazionale/dpc-covid19-ita-andamento-nazionale.csv"
 nation <- read.csv(url_b)
 nation$data <- as.POSIXct(sub(" .*", "", nation$data))
+
+url_c <- "https://github.com/italia/covid19-opendata-vaccini/raw/master/dati/consegne-vaccini-latest.csv"
+vaccine <- read.csv(url_c)
+vaccine$data_consegna <- as.POSIXct(sub(" .*", "", vaccine$data_consegna))
 #
 
 ui <- fluidPage(
@@ -109,9 +113,25 @@ server <- function(input, output) {
                  linetype = "dashed",
                  color = "black")
     
+    n5 <- vaccine %>% 
+      group_by(data_consegna) %>% 
+      arrange(data_consegna) %>% 
+      summarise(numero_dosi = sum(numero_dosi)) %>% 
+      mutate(cumsumv = cumsum(numero_dosi)) %>% 
+      ggplot() +
+      geom_point(aes(x = data_consegna, y = numero_dosi)) +
+      labs(x = "Date",
+           y = "Vaccination") +
+      geom_vline(xintercept = as.POSIXct(as.Date("2020-03-09")),
+                 linetype="dashed",
+                 color = "black") +
+      geom_vline(xintercept = as.POSIXct(as.Date("2020-05-04")),
+                 linetype = "dashed",
+                 color = "black") +
+      geom_smooth(aes(x = data_consegna, y = numero_dosi), method = "gam")
     
-    nt <- (n1 + n2 + n3 + n4) + 
-      plot_layout(ncol = 4)
+    
+    nt <- (n1 + n2 + n3 + n4 + n5) + plot_layout(ncol = 5)
     
     # tables for daily data
     
@@ -140,7 +160,18 @@ server <- function(input, output) {
       ggtexttable(rows = NULL, cols = "PCR tests",
                   theme = ttheme(base_size = 18))
     
-    ntt <- nt1+nt2+nt3+nt4 + plot_layout(ncol = 4)
+    nt5 <- vaccine %>% 
+      group_by(data_consegna) %>% 
+      arrange(data_consegna) %>% 
+      summarise(numero_dosi = sum(numero_dosi)) %>% 
+      slice_max(data_consegna) %>% 
+      select(numero_dosi) %>% 
+      ggtexttable(rows = NULL, cols = "Administered vaccines",
+                  theme = ttheme(base_size = 18))
+    
+
+    
+    ntt <- nt1 + nt2 + nt3 + nt4 + nt5 + plot_layout(ncol = 5)
     
     
     nt/ntt
@@ -208,8 +239,26 @@ server <- function(input, output) {
         labs(x = "Date",
              y = "PCR tests") 
       
-      rt <- r1 + r2 + r3 + r4 + 
-        plot_layout(ncol = 4) 
+      r5 <- vaccine %>% 
+        group_by(nome_area, data_consegna) %>% 
+        arrange(data_consegna) %>% 
+        summarise(numero_dosi = sum(numero_dosi)) %>% 
+        mutate(cumsumv = cumsum(numero_dosi)) %>% 
+        filter(nome_area==input$regionInput) %>% 
+        #filter(nome_area=="Campania") %>% 
+        ggplot() +
+        geom_point(aes(x = data_consegna, y = numero_dosi)) +
+        labs(x = "Date",
+             y = "Vaccination") +
+        geom_vline(xintercept = as.POSIXct(as.Date("2020-03-09")),
+                   linetype="dashed",
+                   color = "black") +
+        geom_vline(xintercept = as.POSIXct(as.Date("2020-05-04")),
+                   linetype = "dashed",
+                   color = "black") +
+        geom_smooth(aes(x = data_consegna, y = numero_dosi), method = "gam") 
+      
+      rt <- r1 + r2 + r3 + r4 + r5 + plot_layout(ncol = 5) 
       
       # tables for daily data
       
@@ -267,7 +316,26 @@ server <- function(input, output) {
         ggtexttable(rows = NULL, theme = ttheme(base_size = 18), 
                     cols = c("PCR tests"))
       
-      rtt <- rt1+rt2+rt3+rt4+ plot_layout(ncol = 4) 
+      rt5 <- vaccine %>% 
+        group_by(data_consegna) %>% 
+        arrange(data_consegna) %>% 
+        summarise(numero_dosi = sum(numero_dosi)) %>% 
+        slice_max(data_consegna) %>% 
+        select(numero_dosi) %>% 
+        #select(numero_dosi) %>% 
+        bind_rows(vaccine %>% 
+                    group_by(nome_area, data_consegna) %>% 
+                    arrange(data_consegna) %>% 
+                    summarise(numero_dosi = sum(numero_dosi)) %>% 
+                    mutate(cumsumv = cumsum(numero_dosi)) %>% 
+                    filter(nome_area==input$regionInput) %>% 
+                    #filter(nome_area=="Campania") %>% 
+                    slice_max(data_consegna) %>%
+                    magrittr::extract("numero_dosi")) %>% 
+        ggtexttable(rows = NULL, theme = ttheme(base_size = 18), 
+                    cols = c("Administered vaccines"))
+      
+      rtt <- rt1+rt2+rt3+rt4 + rt5 + plot_layout(ncol = 5) 
       
       nt/rt/rtt
       
