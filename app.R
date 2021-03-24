@@ -88,9 +88,11 @@ server <- function(input, output) {
       ylim(0, max(nation$nuovi_positivi))
     
     n3 <- nation %>%
-      #filter(nuovi_positivi >= 0) %>%
+      mutate(nuovi_deceduti = deceduti - lag(deceduti, default = first(deceduti))) %>% 
+      filter(nuovi_deceduti >= 0) %>%
       ggplot() +
-      geom_point(aes(x = data, y = deceduti)) +
+      geom_point(aes(x = data, y = nuovi_deceduti)) +
+      geom_smooth(aes(x = data, y = nuovi_deceduti), method = "gam") +
       geom_vline(xintercept = as.POSIXct(as.Date("2020-03-09")),
                  linetype="dashed",
                  color = "black") +
@@ -98,12 +100,14 @@ server <- function(input, output) {
                  linetype = "dashed",
                  color = "black") +
       labs(x = "Date",
-           y = "Deceased")
+           y = "Deceased") 
     
     n4 <- nation %>%
-      #filter(nuovi_positivi >= 0) %>%
+      mutate(nuovi_tamponi = tamponi - lag(tamponi, default = first(tamponi))) %>% 
+      filter(nuovi_tamponi >= 0) %>%
       ggplot() +
-      geom_point(aes(x = data, y = tamponi)) +
+      geom_point(aes(x = data, y = nuovi_tamponi)) +
+        geom_smooth(aes(x = data, y = nuovi_tamponi), method = "gam") +
       labs(x = "Date",
            y = "PCR tests") +
       geom_vline(xintercept = as.POSIXct(as.Date("2020-03-09")),
@@ -213,8 +217,9 @@ server <- function(input, output) {
       
       r3 <- region %>%
         filter(denominazione_regione==input$regionInput) %>% 
-        filter(nuovi_positivi >= 0) %>% 
-        ggplot(aes(x = data, y = deceduti)) +
+        mutate(nuovi_deceduti = deceduti - lag(deceduti, default = first(deceduti))) %>% 
+        filter(nuovi_deceduti >= 0) %>%
+        ggplot(aes(x = data, y = nuovi_deceduti)) +
         geom_point() + 
         geom_vline(xintercept = as.POSIXct(as.Date("2020-03-09")),
                    linetype = "dashed",
@@ -222,13 +227,15 @@ server <- function(input, output) {
         geom_vline(xintercept = as.POSIXct(as.Date("2020-05-04")),
                    linetype = "dashed",
                    color = "black") +
+        geom_smooth(aes(x = data, y = nuovi_deceduti), method = "gam") +
         labs(x = "Date",
              y = "Deceased") 
       
       r4 <- region %>%
         filter(denominazione_regione==input$regionInput) %>% 
-        filter(nuovi_positivi >= 0) %>% 
-        ggplot(aes(x = data, y = tamponi)) +
+        mutate(nuovi_tamponi = tamponi - lag(tamponi, default = first(tamponi))) %>% 
+        filter(nuovi_tamponi >= 0) %>%
+        ggplot(aes(x = data, y = nuovi_tamponi)) +
         geom_point() + 
         geom_vline(xintercept = as.POSIXct(as.Date("2020-03-09")),
                    linetype = "dashed",
@@ -236,6 +243,7 @@ server <- function(input, output) {
         geom_vline(xintercept = as.POSIXct(as.Date("2020-05-04")),
                    linetype = "dashed",
                    color = "black") +
+        geom_smooth(aes(x = data, y = nuovi_tamponi), method = "gam")
         labs(x = "Date",
              y = "PCR tests") 
       
