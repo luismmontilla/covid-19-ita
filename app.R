@@ -248,11 +248,11 @@ server <- function(input, output) {
              y = "PCR tests") 
       
       r5 <- vaccine %>% 
-        group_by(nome_area, data_consegna) %>% 
+        group_by(reg, data_consegna) %>% 
         arrange(data_consegna) %>% 
         summarise(numero_dosi = sum(numero_dosi)) %>% 
         mutate(cumsumv = cumsum(numero_dosi)) %>% 
-        filter(nome_area==input$regionInput) %>% 
+        filter(reg ==input$regionInput) %>% 
         #filter(nome_area=="Campania") %>% 
         ggplot() +
         geom_point(aes(x = data_consegna, y = numero_dosi)) +
@@ -332,11 +332,11 @@ server <- function(input, output) {
         select(numero_dosi) %>% 
         #select(numero_dosi) %>% 
         bind_rows(vaccine %>% 
-                    group_by(nome_area, data_consegna) %>% 
+                    group_by(reg, data_consegna) %>% 
                     arrange(data_consegna) %>% 
                     summarise(numero_dosi = sum(numero_dosi)) %>% 
                     mutate(cumsumv = cumsum(numero_dosi)) %>% 
-                    filter(nome_area==input$regionInput) %>% 
+                    filter(reg==input$regionInput) %>% 
                     #filter(nome_area=="Campania") %>% 
                     slice_max(data_consegna) %>%
                     magrittr::extract("numero_dosi")) %>% 
